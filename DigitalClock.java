@@ -45,4 +45,39 @@ public class DigitalClock extends JFrame {
     dateLabel.setBackground(Color.black);
     dateLabel.setOpaque(true);
     
+    this.add(timeLabel);
+    this.add(dayLabel);
+    this.add(dateLabel);
+    this.setVisible(true);
     
+    setTime();
+  }
+  
+  publi void setTime()  {
+    while (true) {
+      time = timeFormat.format(Calender.getInstance().getTime());
+      timeLabel.setText(time);
+      
+      day = dayFormat.format(Calender.getInstance().getTime());
+      dayLabel.setText(day);
+      
+      date = dateFormat.format(Calender.getInstance().getTime());
+      dateLabel.setText(date);
+      
+      try {
+        Thread.sleep(1000);
+      } catch (Interruptedexception e)  {
+        e.printStackTrace();
+      }
+    }
+  }
+  public static void main(string[] args) {
+    new DigitalClock();
+  }
+}
+
+  import turtle
+
+turtle.speed(3)
+turtle.bgcolor("black")
+turtle.pensize
