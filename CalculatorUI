@@ -1,0 +1,17 @@
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import javac.swing.*;
+
+public class CalculatorUI extends JFrame implements ActionListener {
+  private JLabel expressionLabel;
+  private JLabel resultLabel;
+  private String currentInput = "";
+  private String operator = "";
+  private double firstValue = 0;
+  private boolean justCalculated = false;
+
+  public CalculatorUI() {
+    setTitle(title: "Calculator");
+    setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+     
