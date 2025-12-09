@@ -14,4 +14,255 @@ public class CalculatorUI extends JFrame implements ActionListener {
   public CalculatorUI() {
     setTitle(title: "Calculator");
     setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-     
+    setSize(width: 320, height: 460);
+    setLocationTReLativeTo(c: null);
+    setLayout(new BorederLayout(hgap: 10, vgap: 10));
+    getContentPane() .setBackground(new Color(r: 30, g: 30, b:30));
+        JPanel displayPanel = new JPanel();
+        displayPanel.setLayout(new GridLayout(2, 1));
+        displayPanel.setBackground(new Color(30, 30, 30));
+        displayPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 0, 10));
+
+        expressionLabel = new JLabel(" ", SwingConstants.RIGHT);
+        expressionLabel.setFont(new Font("Segoe UI", Font.PLAIN, 16));
+        expressionLabel.setForeground(new Color(140, 140, 140)); // faded color [web:59]
+
+        resultLabel = new JLabel("0", SwingConstants.RIGHT);
+        resultLabel.setFont(new Font("Segoe UI", Font.BOLD, 32));
+        resultLabel.setForeground(Color.WHITE);
+
+        displayPanel.add(expressionLabel);
+        displayPanel.add(resultLabel);
+        add(displayPanel, BorderLayout.NORTH);
+
+        JPanel buttonPanel = new JPanel(new GridLayout(5, 4, 8, 8));
+        buttonPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        buttonPanel.setBackground(new Color(30, 30, 30));
+
+        String[] buttons = {
+                "C", "←", "%", "/",
+                "7", "8", "9", "*",
+                "4", "5", "6", "-",
+                "1", "2", "3", "+",
+                "±", "0", ".", "="
+        };
+
+        for (String text : buttons) {
+            JButton btn = createButton(text);
+            buttonPanel.add(btn);
+        }
+
+        add(buttonPanel, BorderLayout.CENTER);
+        setVisible(true);
+    }
+
+    private JButton createButton(String text) {
+        JButton button = new JButton(text);
+        button.setFont(new Font("Segoe UI", Font.PLAIN, 20));
+        button.setFocusPainted(false);
+        button.setBorderPainted(false);
+
+        if (text.matches("[0-9.]") || text.equals("±")) {
+            button.setBackground(new Color(55, 55, 55));
+            button.setForeground(Color.WHITE);
+        } else if (text.equals("C") || text.equals("←")) {
+            button.setBackground(new Color(200, 80, 80));
+            button.setForeground(Color.WHITE);
+        } else if (text.equals("=")) {
+            button.setBackground(new Color(0, 120, 215));
+            button.setForeground(Color.WHITE);
+        } else {
+            button.setBackground(new Color(70, 70, 70));
+            button.setForeground(Color.ORANGE);
+        }
+
+        button.addActionListener(this);
+        return button;
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        String cmd = ((JButton) e.getSource()).getText();
+
+        if (cmd.matches("[0-9]")) {
+            handleNumber(cmd);
+        } else if (cmd.equals(".")) {
+            handleDot();
+        } else if (cmd.equals("C")) {
+            clearAll();
+        } else if (cmd.equals("←")) {
+            backspace();
+        } else if (cmd.equals("±")) {
+            toggleSign();
+        } else if (cmd.equals("=")) {
+            calculateResult(true);
+        } else {
+            handleOperator(cmd);
+        }
+
+        updateExpressionLabel();
+        updateLiveResult();  // auto-calc in deep color as user types [web:32][web:45]
+    }
+
+    private void handleNumber(String num) {
+        if (justCalculated) {
+            // start new calculation if user types after result
+            currentInput = "";
+            operator = "";
+            justCalculated = false;
+        }
+        if (currentInput.equals("0")) {
+            currentInput = num;
+        } else {
+            currentInput += num;
+        }
+        resultLabel.setText(currentInput);
+    }
+
+    private void handleDot() {
+        if (justCalculated) {
+            currentInput = "";
+            operator = "";
+            justCalculated = false;
+        }
+        if (!currentInput.contains(".")) {
+            if (currentInput.isEmpty()) {
+                currentInput = "0.";
+            } else {
+                currentInput += ".";
+            }
+            resultLabel.setText(currentInput);
+        }
+    }
+
+    private void handleOperator(String op) {
+        if (!currentInput.isEmpty()) {
+            if (!operator.isEmpty()) {
+                // chain calculations: 5 + 3 + 2 ...
+                calculateResult(false);
+            } else {
+                firstValue = Double.parseDouble(currentInput);
+            }
+            currentInput = "";
+        }
+        operator = op;
+        justCalculated = false;
+    }
+
+    private void calculateResult(boolean fromEqual) {
+        if (operator.isEmpty() || currentInput.isEmpty()) return;
+
+        double secondValue = Double.parseDouble(currentInput);
+        double result = 0;
+
+        switch (operator) {
+            case "+": result = firstValue + secondValue; break;
+            case "-": result = firstValue - secondValue; break;
+            case "*": result = firstValue * secondValue; break;
+            case "/":
+                if (secondValue == 0) {
+                    resultLabel.setText("Error");
+                    expressionLabel.setText(" ");
+                    currentInput = "";
+                    operator = "";
+                    return;
+                }
+                result = firstValue / secondValue;
+                break;
+            case "%":
+                result = firstValue * secondValue / 100.0;
+                break;
+        }
+
+        firstValue = result;
+        currentInput = "";
+        String resultStr = (result == (long) result) ?
+                String.valueOf((long) result) :
+                String.valueOf(result);
+
+        resultLabel.setText(resultStr);  // deep color result
+        if (fromEqual) {
+            expressionLabel.setText(" "); // clear expression on final equals
+            operator = "";
+            justCalculated = true;
+        }
+    }
+
+    private void clearAll() {
+        currentInput = "";
+        operator = "";
+        firstValue = 0;
+        resultLabel.setText("0");
+        expressionLabel.setText(" ");
+        justCalculated = false;
+    }
+
+    private void backspace() {
+        if (!currentInput.isEmpty()) {
+            currentInput = currentInput.substring(0, currentInput.length() - 1);
+            if (currentInput.isEmpty()) currentInput = "0";
+            resultLabel.setText(currentInput);
+        }
+    }
+
+    private void toggleSign() {
+        if (currentInput.isEmpty() || currentInput.equals("0")) return;
+        if (currentInput.startsWith("-")) {
+            currentInput = currentInput.substring(1);
+        } else {
+            currentInput = "-" + currentInput;
+        }
+        resultLabel.setText(currentInput);
+    }
+
+    private void updateExpressionLabel() {
+        String expr = "";
+        if (!Double.isNaN(firstValue) && (operator != null && !operator.isEmpty())) {
+            expr = firstValue + " " + operator + " ";
+        }
+        if (!currentInput.isEmpty()) {
+            expr += currentInput;
+        }
+        if (expr.isEmpty()) expr = " ";
+        expressionLabel.setText(expr);  // faded color already set
+    }
+
+    private void updateLiveResult() {
+        // auto show live result only when we have firstValue, operator and currentInput
+        if (!operator.isEmpty() && !currentInput.isEmpty()) {
+            double tempFirst = firstValue;
+            double tempSecond = Double.parseDouble(currentInput);
+            double result = 0;
+            boolean ok = true;
+
+            switch (operator) {
+                case "+": result = tempFirst + tempSecond; break;
+                case "-": result = tempFirst - tempSecond; break;
+                case "*": result = tempFirst * tempSecond; break;
+                case "/":
+                    if (tempSecond == 0) {
+                        resultLabel.setText("Error");
+                        ok = false;
+                    } else {
+                        result = tempFirst / tempSecond;
+                    }
+                    break;
+                case "%": result = tempFirst * tempSecond / 100.0; break;
+            }
+
+            if (ok) {
+                String resultStr = (result == (long) result) ?
+                        String.valueOf((long) result) :
+                        String.valueOf(result);
+                resultLabel.setText(resultStr);
+            }
+        } else if (!currentInput.isEmpty()) {
+            resultLabel.setText(currentInput);
+        }
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(CalculatorUI::new);
+    }
+}
+// i take some help with google and chat gpt to learn that
